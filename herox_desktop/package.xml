@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package>
+  <name>herox_desktop</name>
+  <version>0.1.0</version>
+  <description>Packages for working with the HEROX AMR platform from a ROS desktop.</description>
+
+  <maintainer email="bernhard.vorhofer@tum.de">Bernhard Vorhofer</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <!-- <run_depend>ridgeback_msgs</run_depend> -->
+  <run_depend>herox_viz</run_depend>
+
+  <export><metapackage/></export>
+</package>
