@@ -2,7 +2,7 @@
   <!-- Ridgeback configuration to view. See ridgeback_description for details. -->
   <arg name="config" default="$(optenv RIDGEBACK_CONFIG base)"/>
 
-  <include file="$(find ridgeback_description)/launch/description.launch">
+  <include file="$(find herox_description)/launch/ridgeback_description.launch">
     <arg name="config" value="$(arg config)" />
   </include>
 
