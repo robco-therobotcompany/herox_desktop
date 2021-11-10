@@ -7,9 +7,10 @@ from python_qt_binding import loadUi
 from python_qt_binding.QtWidgets import QWidget
 from herox_coordinator.msg import SubsystemStatus, SubsystemStatusSingle
 from herox_coordinator.srv import SubsystemControl, SubsystemControlResponse
+from std_srvs.srv import Trigger
+from actionlib_msgs.msg import GoalID
 
-hwState = False
-ctrlState = False
+baseState = False
 navState = False
 teleopState = False
 
@@ -44,11 +45,23 @@ class HeroxDashboard(Plugin):
         # Set up subscribers
         self._subsystemSub = rospy.Subscriber('subsystem_status', SubsystemStatus, self.subsystemStatusCallback)
 
+        # Set up publishers
+        self._cancelGoalPub = rospy.Publisher('/move_base/cancel', GoalID, queue_size=1)
+
+
+        # Set up services
+        rospy.wait_for_service('/driver/halt')
+        self._haltService = rospy.ServiceProxy('/driver/halt', Trigger)
+
+        #rospy.wait_for_service('subsystem_control')
+        #self._subsysService = rospy.ServiceProxy('subsystem_control', SubsystemControl)
+
         # Set up button callbacks
-        self._widget.btnHw.clicked.connect(self.btnHw_callback)
-        self._widget.btnCtrl.clicked.connect(self.btnCtrl_callback)
+        self._widget.btnBase.clicked.connect(self.btnBase_callback)
         self._widget.btnNav.clicked.connect(self.btnNav_callback)
         self._widget.btnTeleop.clicked.connect(self.btnTeleop_callback)
+        self._widget.btnCancelGoal.clicked.connect(self.btnCancelGoal_callback)
+        self._widget.btnEstop.clicked.connect(self.btnEstop_callback)
 
         # Show _widget.windowTitle on left-top of each plugin (when 
         # it's set in _widget). This is useful when you open multiple 
@@ -66,18 +79,14 @@ class HeroxDashboard(Plugin):
         button.style().polish(button)
 
     def subsystemStatusCallback(self, msg):
-        global hwState
-        global ctrlState
+        global baseState
         global navState
         global teleopState
 
         for sub in msg.subsystems:
-            if sub.name == "HW":
-                hwState = sub.status
-                self.updateButtonProperty(self._widget.btnHw, "active", hwState)
-            elif sub.name == "CTRL":
-                ctrlState = sub.status
-                self.updateButtonProperty(self._widget.btnCtrl, "active", ctrlState)
+            if sub.name == "BASE":
+                baseState = sub.status
+                self.updateButtonProperty(self._widget.btnBase, "active", baseState)
             elif sub.name == "NAV":
                 navState = sub.status
                 self.updateButtonProperty(self._widget.btnNav, "active", navState)
@@ -86,23 +95,17 @@ class HeroxDashboard(Plugin):
                 self.updateButtonProperty(self._widget.btnTeleop, "active", teleopState)
 
     def subsystemControlRequest(self, subsystem, state):
-        rospy.wait_for_service('subsystem_control')
         try:
-            subsystem_control = rospy.ServiceProxy('subsystem_control', SubsystemControl)
-            subsystem_control(subsystem, state)
+            print("Subsystem control currently disabled!")
+            #self._subsysService(subsystem, state)
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
-    def btnHw_callback(self):
-        global hwState
+    def btnBase_callback(self):
+        global baseState
 
-        rospy.loginfo('requesting HW %s'%(not hwState))
-        self.subsystemControlRequest('HW', not hwState)
-
-    def btnCtrl_callback(self):
-        global ctrlState
-        rospy.loginfo('requesting CTRL %s'%(not ctrlState))
-        self.subsystemControlRequest('CTRL', not ctrlState)
+        rospy.loginfo('requesting BASE %s'%(not baseState))
+        self.subsystemControlRequest('BASE', not baseState)
 
     def btnNav_callback(self):
         global navState
@@ -113,6 +116,16 @@ class HeroxDashboard(Plugin):
         global teleopState
         rospy.loginfo('requesting TELEOP %s'%(not teleopState))
         self.subsystemControlRequest('TELEOP', not teleopState)
+
+    def btnCancelGoal_callback(self):
+        cancelMessage = GoalID()
+        self._cancelGoalPub.publish(cancelMessage)
+
+    def btnEstop_callback(self):
+        try:
+            self._haltService()
+        except rospy.ServiceException as e:
+            print("Service call failed: %s"%e)
 
     def shutdown_plugin(self):
         # TODO unregister all publishers here
