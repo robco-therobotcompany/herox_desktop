@@ -48,13 +48,13 @@ class HeroxDashboard(Plugin):
         # Set up publishers
         self._cancelGoalPub = rospy.Publisher('/move_base/cancel', GoalID, queue_size=1)
 
-
         # Set up services
-        rospy.wait_for_service('/driver/halt')
+        #rospy.wait_for_service('/driver/halt')
         self._haltService = rospy.ServiceProxy('/driver/halt', Trigger)
 
-        #rospy.wait_for_service('subsystem_control')
-        #self._subsysService = rospy.ServiceProxy('subsystem_control', SubsystemControl)
+        print("Waiting for /subsystem_control service...")
+        rospy.wait_for_service('/subsystem_control')
+        self._subsysService = rospy.ServiceProxy('/subsystem_control', SubsystemControl)
 
         # Set up button callbacks
         self._widget.btnBase.clicked.connect(self.btnBase_callback)
@@ -96,8 +96,7 @@ class HeroxDashboard(Plugin):
 
     def subsystemControlRequest(self, subsystem, state):
         try:
-            print("Subsystem control currently disabled!")
-            #self._subsysService(subsystem, state)
+            self._subsysService(subsystem, state)
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
