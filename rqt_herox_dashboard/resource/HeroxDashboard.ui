@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>HeroxDashboard</class>
+ <widget class="QWidget" name="HeroxDashboard">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>471</width>
-    <height>353</height>
+    <width>330</width>
+    <height>224</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>HEROX Dashboard</string>
   </property>
   <property name="styleSheet">
    <string notr="true">QPushButton[active=true]
@@ -27,10 +27,10 @@ QPushButton[error=true]
   <widget class="QPushButton" name="btnNav">
    <property name="geometry">
     <rect>
-     <x>140</x>
+     <x>120</x>
      <y>50</y>
-     <width>121</width>
-     <height>51</height>
+     <width>91</width>
+     <height>41</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -62,10 +62,10 @@ QPushButton[error=true]
   <widget class="QPushButton" name="btnTeleop">
    <property name="geometry">
     <rect>
-     <x>270</x>
+     <x>230</x>
      <y>50</y>
-     <width>111</width>
-     <height>51</height>
+     <width>91</width>
+     <height>41</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -86,8 +86,8 @@ QPushButton[error=true]
     <rect>
      <x>10</x>
      <y>50</y>
-     <width>121</width>
-     <height>51</height>
+     <width>91</width>
+     <height>41</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -121,8 +121,8 @@ QPushButton[error=true]
     <rect>
      <x>10</x>
      <y>150</y>
-     <width>171</width>
-     <height>51</height>
+     <width>121</width>
+     <height>61</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -141,10 +141,10 @@ QPushButton[error=true]
   <widget class="QPushButton" name="btnEstop">
    <property name="geometry">
     <rect>
-     <x>290</x>
-     <y>240</y>
+     <x>160</x>
+     <y>140</y>
      <width>161</width>
-     <height>91</height>
+     <height>71</height>
     </rect>
    </property>
    <property name="autoFillBackground">
