@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>330</width>
-    <height>224</height>
+    <height>348</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,7 +28,7 @@ QPushButton[error=true]
    <property name="geometry">
     <rect>
      <x>120</x>
-     <y>50</y>
+     <y>40</y>
      <width>91</width>
      <height>41</height>
     </rect>
@@ -63,7 +63,7 @@ QPushButton[error=true]
    <property name="geometry">
     <rect>
      <x>230</x>
-     <y>50</y>
+     <y>40</y>
      <width>91</width>
      <height>41</height>
     </rect>
@@ -85,7 +85,7 @@ QPushButton[error=true]
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>50</y>
+     <y>40</y>
      <width>91</width>
      <height>41</height>
     </rect>
@@ -103,30 +103,20 @@ QPushButton[error=true]
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>110</y>
-     <width>161</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Navigation</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="btnCancelGoal">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>150</y>
-     <width>121</width>
-     <height>61</height>
+     <y>230</y>
+     <width>141</width>
+     <height>101</height>
     </rect>
    </property>
    <property name="autoFillBackground">
     <bool>false</bool>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: orange</string>
    </property>
    <property name="text">
     <string>Cancel Goal</string>
@@ -142,9 +132,9 @@ QPushButton[error=true]
    <property name="geometry">
     <rect>
      <x>160</x>
-     <y>140</y>
-     <width>161</width>
-     <height>71</height>
+     <y>230</y>
+     <width>151</width>
+     <height>101</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -155,6 +145,142 @@ QPushButton[error=true]
    </property>
    <property name="text">
     <string>ESTOP</string>
+   </property>
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>90</y>
+     <width>161</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Mission</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnAddWaypoint">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>170</y>
+     <width>91</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Add WP</string>
+   </property>
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnStartMission">
+   <property name="geometry">
+    <rect>
+     <x>120</x>
+     <y>170</y>
+     <width>91</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Start</string>
+   </property>
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnStopMission">
+   <property name="geometry">
+    <rect>
+     <x>230</x>
+     <y>170</y>
+     <width>91</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Stop</string>
+   </property>
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="comboBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>120</y>
+     <width>201</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="editable">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnLoadMission">
+   <property name="geometry">
+    <rect>
+     <x>230</x>
+     <y>120</y>
+     <width>41</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Load</string>
+   </property>
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnSaveMission">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>120</y>
+     <width>41</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Save</string>
    </property>
    <property name="checkable">
     <bool>false</bool>
