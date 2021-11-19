@@ -2,18 +2,29 @@ import os
 import rospy
 import rospkg
 
+from sensor_msgs.msg import Joy
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
-from python_qt_binding.QtWidgets import QWidget
-from herox_coordinator.msg import SubsystemStatus, SubsystemStatusSingle
+from python_qt_binding import QtCore
+from python_qt_binding.QtWidgets import QWidget, QPushButton
+from herox_coordinator.msg import SubsystemStatus, SubsystemStatusSingle, Missions
 from herox_coordinator.srv import SubsystemControl, SubsystemControlResponse, LoadMission, NewMission, SaveMission
 from std_srvs.srv import Trigger
 from actionlib_msgs.msg import GoalID
 from geometry_msgs.msg import Pose
 
-baseState = False
-navState = False
-teleopState = False
+class Subsystem(QtCore.QObject):
+    status_updated = QtCore.pyqtSignal(object)
+
+    def __init__(self, name):
+        QtCore.QObject.__init__(self)
+        self.name = name
+        self.status = False
+        self.button = None
+
+    def update_status(self, status):
+        self.status = status
+        self.status_updated.emit(self)
 
 # Values for colored terminal output
 class bcolors:
@@ -29,6 +40,13 @@ class bcolors:
 
 
 class HeroxDashboard(Plugin):
+    subsys_received = False
+    subsystems = []
+
+    missionsUpdated = QtCore.pyqtSignal(object)
+    missions = []
+
+    joystick_button_states = []
 
     def __init__(self, context):
         super(HeroxDashboard, self).__init__(context)
@@ -56,9 +74,6 @@ class HeroxDashboard(Plugin):
         # Give QObjects reasonable names
         self._widget.setObjectName('HeroxDashboardUi')
 
-        # Set up subscribers
-        self._subsystemSub = rospy.Subscriber('subsystem_status', SubsystemStatus, self.subsystemStatusCallback)
-
         # Set up publishers
         self._cancelGoalPub = rospy.Publisher('/move_base/cancel', GoalID, queue_size=1)
 
@@ -66,22 +81,30 @@ class HeroxDashboard(Plugin):
         print("Waiting for services...")
         rospy.wait_for_service('/subsystem_control')
         print(bcolors.OKGREEN + u'\u2713' + bcolors.ENDC + ' /subsystem_control')
-        rospy.wait_for_service('/driver/halt')
-        print(bcolors.OKGREEN + u'\u2713' + bcolors.ENDC + ' /driver/halt')
-        rospy.wait_for_service('/load_mission')
-        print(bcolors.OKGREEN + u'\u2713' + bcolors.ENDC + ' /load_mission')
-        rospy.wait_for_service('/new_mission')
-        print(bcolors.OKGREEN + u'\u2713' + bcolors.ENDC + ' /new_mission')
-        rospy.wait_for_service('/save_mission')
-        print(bcolors.OKGREEN + u'\u2713' + bcolors.ENDC + ' /save_mission')
-        rospy.wait_for_service('/start_mission')
-        print(bcolors.OKGREEN + u'\u2713' + bcolors.ENDC + ' /start_mission')
-        rospy.wait_for_service('/stop_mission')
-        print(bcolors.OKGREEN + u'\u2713' + bcolors.ENDC + ' /stop_mission')
-        rospy.wait_for_service('/add_waypoint')
-        print(bcolors.OKGREEN + u'\u2713' + bcolors.ENDC + ' /add_waypoint')
 
-        print(bcolors.OKGREEN + 'All services online.' + bcolors.ENDC)
+        # Set up subscribers (except for missions, that's set up at the end to populate combo box)
+        self._subsystemSub = rospy.Subscriber('subsystem_status', SubsystemStatus, self.subsystemStatusCallback)
+        self._joySub = rospy.Subscriber('/joystick_teleop/joy', Joy, self.joystickCallback)
+
+        # Set up subsystem buttons
+        print("Waiting for subsystem message...")
+        while not self.subsys_received:
+            rospy.sleep(1)
+        print(bcolors.OKGREEN + u'\u2713' + bcolors.ENDC + ' Subsystems received')
+
+        columns = 3
+        row = 0
+        col = 0
+
+        for sub in self.subsystems:
+            sub.button = QPushButton(sub.name)
+            self._widget.gbxSubsystems.layout().addWidget(sub.button, row, col)
+            sub.button.clicked.connect(self.subsysButton_callback)
+            sub.status_updated.connect(self.subsystemUpdated_callback)
+            col = col + 1
+            if col >= columns:
+                col = 0
+                row = row + 1
 
         self._haltService = rospy.ServiceProxy('/driver/halt', Trigger)
         self._loadService = rospy.ServiceProxy('/load_mission', LoadMission)
@@ -94,9 +117,6 @@ class HeroxDashboard(Plugin):
         self._subsysService = rospy.ServiceProxy('/subsystem_control', SubsystemControl)
 
         # Set up button callbacks
-        self._widget.btnBase.clicked.connect(self.btnBase_callback)
-        self._widget.btnNav.clicked.connect(self.btnNav_callback)
-        self._widget.btnTeleop.clicked.connect(self.btnTeleop_callback)
         self._widget.btnCancelGoal.clicked.connect(self.btnCancelGoal_callback)
         self._widget.btnEstop.clicked.connect(self.btnEstop_callback)
         self._widget.btnLoadMission.clicked.connect(self.btnLoad_callback)
@@ -104,6 +124,8 @@ class HeroxDashboard(Plugin):
         self._widget.btnAddWaypoint.clicked.connect(self.btnAddWP_callback)
         self._widget.btnStartMission.clicked.connect(self.btnStart_callback)
         self._widget.btnStopMission.clicked.connect(self.btnStop_callback)
+
+        self.missionsUpdated.connect(self.missionsUpdatedCallback)
         
         self._widget.setWindowTitle('HEROX Dashboard')
 
@@ -116,27 +138,75 @@ class HeroxDashboard(Plugin):
             self._widget.setWindowTitle(self._widget.windowTitle() + (' (%d)' % context.serial_number()))
         # Add widget to the user interface
         context.add_widget(self._widget)
+
+        self._missionsSub = rospy.Subscriber('missions', Missions, self.missionsCallback)
+
     
     def updateButtonProperty(self, button, prop, value):
         button.setProperty(prop, value)
         button.style().unpolish(button)
         button.style().polish(button)
 
+    def missionsCallback(self, msg):
+        self.missions = msg.missions
+        self.missionsUpdated.emit(msg.missions)
+
+    def missionsUpdatedCallback(self, missions):
+        self._widget.cbxMission.clear()
+        self._widget.cbxMission.addItems(missions)
+
+    def checkJoystickButton(self, btn, msg):
+        if btn >= msg.buttons:
+            return False
+
+        # Expand joystick state array if necessary
+        while btn >= len(self.joystick_button_states):
+            self.joystick_button_states.append(msg.buttons[len(self.joystick_button_states)])
+
+        # Return true if and only if button was pressed
+        pressed = not self.joystick_button_states[btn] and msg.buttons[btn]
+
+        self.joystick_button_states[btn] = msg.buttons[btn]
+
+        return pressed
+
+    def joystickCallback(self, msg):
+        if len(msg.buttons) == 0:
+            return
+
+        # 'X' button on controller stores waypoint
+        if self.checkJoystickButton(2, msg):
+            self._addWPService()
+
+        # 'A' button on controller starts mission
+        if self.checkJoystickButton(0, msg):
+            self._startService()
+
+        # 'Y' button on controller stops mission
+        if self.checkJoystickButton(3, msg):
+            self._stopService()
+
     def subsystemStatusCallback(self, msg):
-        global baseState
+        global motorsState
+        global lasersState
         global navState
         global teleopState
+        global coordState
+        global controlState
 
         for sub in msg.subsystems:
-            if sub.name == "BASE":
-                baseState = sub.status
-                self.updateButtonProperty(self._widget.btnBase, "active", baseState)
-            elif sub.name == "NAV":
-                navState = sub.status
-                self.updateButtonProperty(self._widget.btnNav, "active", navState)
-            elif sub.name == "TELEOP":
-                teleopState = sub.status
-                self.updateButtonProperty(self._widget.btnTeleop, "active", teleopState)
+            # Initialize subsystems on first message
+            if not self.subsys_received:
+                newSubsys = Subsystem(sub.name)
+                self.subsystems.append(newSubsys)
+                continue
+
+            for s in self.subsystems:
+                if s.name == sub.name:
+                    s.update_status(sub.status)
+
+        if not self.subsys_received:
+            self.subsys_received = True
 
     def subsystemControlRequest(self, subsystem, state):
         try:
@@ -144,21 +214,22 @@ class HeroxDashboard(Plugin):
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
-    def btnBase_callback(self):
-        global baseState
+    def subsystemUpdated_callback(self, sub):
+        self.updateButtonProperty(sub.button, "active", sub.status)
 
-        rospy.loginfo('requesting BASE %s'%(not baseState))
-        self.subsystemControlRequest('BASE', not baseState)
+    def subsysButton_callback(self):
+        btn = self.sender()
+        sub = None
 
-    def btnNav_callback(self):
-        global navState
-        rospy.loginfo('requesting NAV %s'%(not navState))
-        self.subsystemControlRequest('NAV', not navState)
+        for s in self.subsystems:
+            if s.name == btn.text():
+                sub = s
 
-    def btnTeleop_callback(self):
-        global teleopState
-        rospy.loginfo('requesting TELEOP %s'%(not teleopState))
-        self.subsystemControlRequest('TELEOP', not teleopState)
+        if sub is None:
+            return
+
+        rospy.loginfo('requesting %s %s'%(sub.name, not sub.status))
+        self.subsystemControlRequest(sub.name, not sub.status)
 
     def btnCancelGoal_callback(self):
         cancelMessage = GoalID()
