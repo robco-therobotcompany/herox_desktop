@@ -4,10 +4,13 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Planners1
+        - /Planners1/TEB1
+        - /Planners1/TEB1/TEB Markers1
+        - /Planners1/TEB1/TEB Markers1/Namespaces1
         - /Planners1/Costmaps1
-      Splitter Ratio: 0.4851936101913452
-    Tree Height: 777
+        - /TF1
+      Splitter Ratio: 0.6013667583465576
+    Tree Height: 455
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -205,13 +208,20 @@ Visualization Manager:
         - Class: rviz/Group
           Displays:
             - Class: rviz/Marker
-              Enabled: false
+              Enabled: true
               Marker Topic: /move_base/TebLocalPlannerROS/teb_markers
               Name: TEB Markers
               Namespaces:
-                {}
+                GraphEdges: true
+                GraphVertices: true
+                InfeasibleRobotPoses: true
+                LineObstacles: true
+                PointObstacles: true
+                PolyObstacles: true
+                RobotFootprintModel: true
+                TebContainer: true
               Queue Size: 100
-              Value: false
+              Value: true
             - Alpha: 1
               Arrow Length: 0.30000001192092896
               Axes Length: 0.30000001192092896
@@ -232,16 +242,16 @@ Visualization Manager:
           Name: TEB
         - Class: rviz/Group
           Displays:
-            - Alpha: 0.699999988079071
+            - Alpha: 0.6000000238418579
               Class: rviz/Map
               Color Scheme: costmap
-              Draw Behind: false
-              Enabled: false
+              Draw Behind: true
+              Enabled: true
               Name: Global Costmap
               Topic: /move_base/global_costmap/costmap
               Unreliable: false
               Use Timestamp: false
-              Value: false
+              Value: true
             - Alpha: 0.4000000059604645
               Class: rviz/Map
               Color Scheme: costmap
@@ -294,14 +304,101 @@ Visualization Manager:
           Value: false
         - Alpha: 1
           Class: rviz/Polygon
-          Color: 25; 255; 0
-          Enabled: false
+          Color: 32; 74; 135
+          Enabled: true
           Name: Loc. Footprint
           Topic: /move_base/local_costmap/footprint
           Unreliable: false
-          Value: false
+          Value: true
       Enabled: true
       Name: Planners
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /tag_detections_image
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: TagDetections
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: compressed
+      Unreliable: false
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        base_link:
+          Value: false
+        camera_color_frame:
+          Value: false
+        camera_color_optical_frame:
+          Value: false
+        camera_depth_frame:
+          Value: false
+        camera_depth_optical_frame:
+          Value: false
+        camera_link:
+          Value: false
+        chassis_bottom_link:
+          Value: false
+        chassis_top_link:
+          Value: false
+        front_laser:
+          Value: false
+        front_left_wheel_link:
+          Value: false
+        front_right_wheel_link:
+          Value: false
+        map:
+          Value: false
+        mytag:
+          Value: true
+        odom:
+          Value: false
+        rear_laser:
+          Value: false
+        rear_left_wheel_link:
+          Value: false
+        rear_right_wheel_link:
+          Value: false
+      Marker Scale: 2
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        map:
+          odom:
+            base_link:
+              camera_link:
+                camera_color_frame:
+                  camera_color_optical_frame:
+                    {}
+                  mytag:
+                    {}
+                camera_depth_frame:
+                  camera_depth_optical_frame:
+                    {}
+              chassis_bottom_link:
+                {}
+              chassis_top_link:
+                {}
+              front_laser:
+                {}
+              front_left_wheel_link:
+                {}
+              front_right_wheel_link:
+                {}
+              rear_laser:
+                {}
+              rear_left_wheel_link:
+                {}
+              rear_right_wheel_link:
+                {}
+      Update Interval: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -329,7 +426,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0
+      Angle: -0.06999999284744263
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -339,20 +436,22 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 90.35118103027344
+      Scale: 239.83828735351562
       Target Frame: base_link
       Value: TopDownOrtho (rviz)
-      X: -0.6538341641426086
-      Y: 0.09563940763473511
+      X: -0.32041218876838684
+      Y: -0.015366904437541962
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 939
+  Height: 936
   Hide Left Dock: false
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd0000000400000000000001b90000034bfc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005e00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed0000041a00000185000000b3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000400000034b000000ce00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c0000026100000001000002880000063bfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000710000063b000000ac00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000002c800000066fc0100000002fb0000000800540069006d00650000000000000002c80000025700fffffffb0000000800540069006d00650100000000000004500000000000000000000004d10000034b00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001b900000348fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005e00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed0000033500000185000000b3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000004000000209000000ce00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001a0054006100670044006500740065006300740069006f006e0073010000024f000001390000001800ffffff00000001000002880000063bfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000710000063b000000ac00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000002c800000066fc0100000002fb0000000800540069006d00650000000000000002c80000044b00fffffffb0000000800540069006d006501000000000000045000000000000000000000041d0000034800000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
+    collapsed: false
+  TagDetections:
     collapsed: false
   Time:
     collapsed: false
@@ -360,6 +459,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: true
-  Width: 1680
+  Width: 1500
   X: 0
-  Y: 24
+  Y: 28
