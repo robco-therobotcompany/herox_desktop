@@ -13,39 +13,6 @@ from geometry_msgs.msg import Pose
 from herox_coordinator.msg import Mission as MissionMessage, Missions as MissionsMessage
 from herox_coordinator.srv import SubsystemControl, SubsystemControlResponse, LoadMission, NewMission, SaveMission, WaypointAction
 
-# Data model for the table view
-#class WaypointModel(QtCore.QAbstractTableModel):
-#    header_labels = ['ID','Tag','Visits','Avg. SPL']
-#
-#    def __init__(self,waypoints):
-#        super(WaypointModel, self).__init__()
-#        self.waypoints = waypoints
-#
-#    def setWaypoints(self, wps):
-#        self.waypoints = wps
-#        self.dataChanged.emit(self.index(0,0), self.index(len(self.header_labels),len(self.waypoints)), [])
-#
-#    def data(self, index, role):
-#        if role == Qt.DisplayRole:
-#            if index.column() == 0:
-#                return self.waypoints[index.row()].id
-#            if index.column() == 1:
-#                return self.waypoints[index.row()].tagname
-#            if index.column() == 2:
-#                return len(self.waypoints[index.row()].visits)
-#            if index.column() == 3:
-#                return -1.0
-#
-#    def headerData(self, section, orientation, role=Qt.DisplayRole):
-#        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-#            return self.header_labels[section]
-#        return QtCore.QAbstractTableModel.headerData(self, section, orientation, role)
-#
-#    def rowCount(self, index):
-#        return len(self.waypoints)
-#
-#    def columnCount(self, index):
-#        return 4
 
 # Values for colored terminal output
 class bcolors:
@@ -118,7 +85,7 @@ class HeroxMissionEditor(Plugin):
         self.currentMissionUpdated.connect(self.currentMissionUpdatedCallback)
 
         self._widget.twWaypoints.setColumnCount(4)
-        self._widget.twWaypoints.setHorizontalHeaderLabels(['ID','Tag','Visits','Avg. SPL'])
+        self._widget.twWaypoints.setHorizontalHeaderLabels(['ID','Tag','Visits','Pose Ref.'])
         self._widget.twWaypoints.cellChanged.connect(self.cellChangedCallback)
         
         self._widget.setWindowTitle('HEROX Mission Editor')
@@ -162,9 +129,11 @@ class HeroxMissionEditor(Plugin):
             row = self._widget.twWaypoints.rowCount()
             self._widget.twWaypoints.insertRow(row)
             self._widget.twWaypoints.setItem(row, 0, QTableWidgetItem(str(wp.id)))
-            self._widget.twWaypoints.setItem(row, 1, QTableWidgetItem(wp.tagname))
+            self._widget.twWaypoints.setItem(row, 1, QTableWidgetItem(str(wp.tagid)))
             self._widget.twWaypoints.setItem(row, 2, QTableWidgetItem(str(len(wp.visits))))
-            self._widget.twWaypoints.setItem(row, 3, QTableWidgetItem("N/A"))
+            refPose = wp.measurementOffset
+            refPoseString = "{:.2f}, {:.2f}".format(refPose.position.x, refPose.position.y)
+            self._widget.twWaypoints.setItem(row, 3, QTableWidgetItem(refPoseString))
         self.unlockTags()
 
     def btnLoad_callback(self):
