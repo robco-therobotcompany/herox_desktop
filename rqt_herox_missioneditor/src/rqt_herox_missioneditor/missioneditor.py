@@ -2,11 +2,13 @@ import os
 import rospy
 import rospkg
 
+import numpy as np
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
 from python_qt_binding import QtCore
 from python_qt_binding.QtCore import Qt
 from python_qt_binding.QtWidgets import QWidget, QTableWidgetItem, QPushButton
+import pyqtgraph as pg
 from std_srvs.srv import Trigger
 from actionlib_msgs.msg import GoalID
 from geometry_msgs.msg import Pose
@@ -100,6 +102,19 @@ class HeroxMissionEditor(Plugin):
         # Add widget to the user interface
         context.add_widget(self._widget)
 
+        plot = self._widget.pltAccuracy
+        plot.setAspectLocked()
+        plot.setXRange(-1,1)
+        plot.setYRange(-1,1)
+        plot.showGrid(x = True, y = True)
+        plot.addLine(x=0, pen=0.2)
+        plot.addLine(y=0, pen=0.2)
+        for r in np.arange(0.1, 1, 0.1):
+            circle = pg.QtGui.QGraphicsEllipseItem(-r, -r, r * 2, r * 2)
+            circle.setPen(pg.mkPen(0.2))
+            plot.addItem(circle)
+        self.scatter_plot = plot.plot([],[],pen=None,symbolBrush='w',symbol='x')
+
         self._missionsSub = rospy.Subscriber('missions', MissionsMessage, self.missionsCallback)
         rospy.Subscriber('current_mission', MissionMessage, self.currentMissionCallback)
 
@@ -135,6 +150,15 @@ class HeroxMissionEditor(Plugin):
             refPoseString = "{:.2f}, {:.2f}".format(refPose.position.x, refPose.position.y)
             self._widget.twWaypoints.setItem(row, 3, QTableWidgetItem(refPoseString))
         self.unlockTags()
+        
+        # Update accuracy plot
+        x = []
+        y = []
+        for wp in mission.waypoints:
+            for v in wp.visits:
+                x.append(v.measurement.position.x - wp.measurementOffset.position.x)
+                y.append(v.measurement.position.y - wp.measurementOffset.position.y)
+        self.scatter_plot.setData(y,x)
 
     def btnLoad_callback(self):
         mission = self._widget.cbxMission.currentText()
