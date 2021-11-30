@@ -12,6 +12,7 @@ import pyqtgraph as pg
 from std_srvs.srv import Trigger
 from actionlib_msgs.msg import GoalID
 from geometry_msgs.msg import Pose
+from nav_msgs.msg import OccupancyGrid
 from herox_coordinator.msg import Mission as MissionMessage, Missions as MissionsMessage
 from herox_coordinator.srv import SubsystemControl, SubsystemControlResponse, LoadMission, NewMission, SaveMission, WaypointAction
 
@@ -31,9 +32,12 @@ class bcolors:
 class HeroxMissionEditor(Plugin):
     missionsUpdated = QtCore.pyqtSignal(object)
     currentMissionUpdated = QtCore.pyqtSignal(object)
+    mapUpdated = QtCore.pyqtSignal(object)
     missions = []
     currentMission = None
     lockTags = False
+    scatter_plots = []
+    path_plots = []
 
     def __init__(self, context):
         super(HeroxMissionEditor, self).__init__(context)
@@ -82,13 +86,18 @@ class HeroxMissionEditor(Plugin):
         self._widget.btnRemoveWaypoint.clicked.connect(self.btnRemoveWP_callback)
         self._widget.btnMoveUp.clicked.connect(self.btnMoveUp_callback)
         self._widget.btnMoveDown.clicked.connect(self.btnMoveDown_callback)
+        self._widget.btnClearSelection.clicked.connect(self.btnClearSelection_callback)
+
+        self._widget.sbxVisit.valueChanged.connect(self.sbxVisit_callback)
 
         self.missionsUpdated.connect(self.missionsUpdatedCallback)
         self.currentMissionUpdated.connect(self.currentMissionUpdatedCallback)
+        self.mapUpdated.connect(self.mapUpdatedCallback)
 
         self._widget.twWaypoints.setColumnCount(4)
         self._widget.twWaypoints.setHorizontalHeaderLabels(['ID','Tag','Visits','Pose Ref.'])
         self._widget.twWaypoints.cellChanged.connect(self.cellChangedCallback)
+        self._widget.twWaypoints.itemSelectionChanged.connect(self.twWaypointsSelectionChanged_callback)
         
         self._widget.setWindowTitle('HEROX Mission Editor')
 
@@ -102,7 +111,9 @@ class HeroxMissionEditor(Plugin):
         # Add widget to the user interface
         context.add_widget(self._widget)
 
+        # Set up accuracy plot
         plot = self._widget.pltAccuracy
+        plot.setBackground('w')
         plot.setAspectLocked()
         plot.setXRange(-1,1)
         plot.setYRange(-1,1)
@@ -113,10 +124,16 @@ class HeroxMissionEditor(Plugin):
             circle = pg.QtGui.QGraphicsEllipseItem(-r, -r, r * 2, r * 2)
             circle.setPen(pg.mkPen(0.2))
             plot.addItem(circle)
-        self.scatter_plot = plot.plot([],[],pen=None,symbolBrush='w',symbol='x')
+        #self.scatter_plot = plot.plot([],[],pen=None,symbolBrush='k',symbol='x')
+
+        # Set up path plot
+        plot = self._widget.pltPath
+        plot.setBackground('w')
+        plot.setAspectLocked()
 
         self._missionsSub = rospy.Subscriber('missions', MissionsMessage, self.missionsCallback)
         rospy.Subscriber('current_mission', MissionMessage, self.currentMissionCallback)
+        rospy.Subscriber('map', OccupancyGrid, self.mapCallback)
 
     def missionsCallback(self, msg):
         self.missions = msg.missions
@@ -131,10 +148,111 @@ class HeroxMissionEditor(Plugin):
         self.currentMission = msg
         self.currentMissionUpdated.emit(msg)
 
+    def mapUpdatedCallback(self, msg):
+        print("map is " + str(msg.info.width) + "x" + str(msg.info.height))
+        img_data = np.reshape(msg.data,(msg.info.height,msg.info.width))
+
+        # Compute map origin and dimensions in m
+        img_w = msg.info.width * msg.info.resolution
+        img_h = msg.info.height * msg.info.resolution
+        img_x = msg.info.origin.position.x
+        img_y = msg.info.origin.position.y
+
+        img = pg.ImageItem(image=img_data.T,levels=(1,0))
+        img.setRect(QtCore.QRect(img_x,img_y,img_w,img_h))
+        self._widget.pltPath.addItem(img)
+
+    def mapCallback(self, msg):
+        print("Received map")
+        self.mapUpdated.emit(msg)
+
     def lockTags(self):
         self._widget.twWaypoints.cellChanged.disconnect(self.cellChangedCallback)
     def unlockTags(self):
         self._widget.twWaypoints.cellChanged.connect(self.cellChangedCallback)
+
+    def clearScatterPlot(self):
+        for p in self.scatter_plots:
+            self._widget.pltAccuracy.removeItem(p)
+
+        del self.scatter_plots[:]
+
+    def updatePlotAllWaypoints(self):
+        self.clearScatterPlot()
+        x = []
+        y = []
+        for wp in self.currentMission.waypoints:
+            for v in wp.visits:
+                x.append(v.measurement.position.x - wp.measurementOffset.position.x)
+                y.append(v.measurement.position.y - wp.measurementOffset.position.y)
+        self.scatter_plots.append(self._widget.pltAccuracy.plot(y,x,pen=None,symbolPen='k',symbolBrush='k',symbol='x'))
+
+    def updatePlotSingleWaypoint(self, wp_idx):
+        self.clearScatterPlot()
+        x = []
+        y = []
+        symbolPens = []
+        highlightedItem = None
+        visit = self._widget.sbxVisit.value()
+        wp = self.currentMission.waypoints[wp_idx]
+        for i,v in enumerate(wp.visits):
+            itemX = v.measurement.position.x - wp.measurementOffset.position.x
+            itemY = v.measurement.position.y - wp.measurementOffset.position.y
+            if i == visit:
+                highlightedItem = (itemX,itemY,'r')
+            else:
+                x.append(itemX)
+                y.append(itemY)
+                symbolPens.append('k')
+
+        # Append highlighted item so it's last (if it exists)
+        if highlightedItem is not None:
+            x.append(highlightedItem[0])
+            y.append(highlightedItem[1])
+            symbolPens.append(highlightedItem[2])
+
+        self.scatter_plots.append(self._widget.pltAccuracy.plot(y,x,pen=None,symbolPen=symbolPens,symbolBrush=symbolPens,symbol='x'))
+
+    def clearPathPlot(self):
+        for p in self.path_plots:
+            self._widget.pltPath.removeItem(p)
+
+        del self.path_plots[:]
+
+    def updatePathPlot(self):
+        self.clearPathPlot()
+        for wp in self.currentMission.waypoints:
+            # Plot shortest path
+            x = [p.position.x for p in wp.shortestPath]
+            y = [p.position.y for p in wp.shortestPath]
+            self.path_plots.append(self._widget.pltPath.plot(x,y,pen='g'))
+
+            # Plot actual path
+            visit = self._widget.sbxVisit.value()
+            if visit >= len(wp.visits):
+                continue
+
+            x = [p.pose.position.x for p in wp.visits[visit].path]
+            y = [p.pose.position.y for p in wp.visits[visit].path]
+            self.path_plots.append(self._widget.pltPath.plot(x,y,pen='r'))
+
+    def updatePathPlotSingleWaypoint(self, wp_idx):
+        self.clearPathPlot()
+        wp = self.currentMission.waypoints[wp_idx]
+        visit = self._widget.sbxVisit.value()
+
+        # Plot shortest path
+        x = [p.position.x for p in wp.shortestPath]
+        y = [p.position.y for p in wp.shortestPath]
+        self.path_plots.append(self._widget.pltPath.plot(x,y,pen='g'))
+
+        # Plot actual path
+        if visit >= len(wp.visits):
+            return
+
+        x = [p.pose.position.x for p in wp.visits[visit].path]
+        y = [p.pose.position.y for p in wp.visits[visit].path]
+        self.path_plots.append(self._widget.pltPath.plot(x,y,pen='r'))
         
     def currentMissionUpdatedCallback(self, mission):
         print("mission updated callback, waypoints: " + str(len(mission.waypoints)))
@@ -150,15 +268,15 @@ class HeroxMissionEditor(Plugin):
             refPoseString = "{:.2f}, {:.2f}".format(refPose.position.x, refPose.position.y)
             self._widget.twWaypoints.setItem(row, 3, QTableWidgetItem(refPoseString))
         self.unlockTags()
-        
+        selectedWP = self.getSelectedWaypoint()
+
         # Update accuracy plot
-        x = []
-        y = []
-        for wp in mission.waypoints:
-            for v in wp.visits:
-                x.append(v.measurement.position.x - wp.measurementOffset.position.x)
-                y.append(v.measurement.position.y - wp.measurementOffset.position.y)
-        self.scatter_plot.setData(y,x)
+        if selectedWP is None:
+            self.updatePlotAllWaypoints()
+            self.updatePathPlot()
+        else:
+            self.updatePlotSingleWaypoint(selectedWP)
+            self.updatePathPlotSingleWaypoint(selectedWP)
 
     def btnLoad_callback(self):
         mission = self._widget.cbxMission.currentText()
@@ -184,12 +302,18 @@ class HeroxMissionEditor(Plugin):
         print('Requesting to remove selected WP ' + str(row))
         self._wpRemoveService(row, "")
 
-    def btnMoveUp_callback(self):
+    def getSelectedWaypoint(self):
         selection = self._widget.twWaypoints.selectedRanges()
         if (len(selection) == 0):
+            return None
+
+        return selection[0].topRow()
+
+    def btnMoveUp_callback(self):
+        row = getSelectedWaypoint()
+        if row is None:
             return
 
-        row = selection[0].topRow()
         if row == 0:
             return
 
@@ -200,11 +324,10 @@ class HeroxMissionEditor(Plugin):
         #self._widget.twWaypoints.selectRow(row-1)
 
     def btnMoveDown_callback(self):
-        selection = self._widget.twWaypoints.selectedRanges()
-        if (len(selection) == 0):
+        row = getSelectedWaypoint()
+        if row is None:
             return
 
-        row = selection[0].topRow()
         if row == self._widget.twWaypoints.rowCount() - 1:
             return
 
@@ -235,6 +358,37 @@ class HeroxMissionEditor(Plugin):
     def btnStop_callback(self):
         print('Requesting to stop mission')
         self._stopService()
+
+    def btnClearSelection_callback(self):
+        self._widget.twWaypoints.clearSelection()
+
+    def twWaypointsSelectionChanged_callback(self):
+        row = self.getSelectedWaypoint()
+
+        if row is None:
+            self.updatePlotAllWaypoints()
+            self.updatePathPlot()
+
+            # Update visits spinner range
+            maxVisit = max([len(wp.visits) for wp in self.currentMission.waypoints])
+            self._widget.sbxVisit.setRange(0,maxVisit)
+        else:
+            self.updatePlotSingleWaypoint(row)
+            self.updatePathPlotSingleWaypoint(row)
+
+            # Update visits spinner range
+            maxVisit = len(self.currentMission.waypoints[row].visits) - 1
+            self._widget.sbxVisit.setRange(0,maxVisit)
+
+
+    def sbxVisit_callback(self):
+        selectedWP = self.getSelectedWaypoint()
+        if selectedWP is not None:
+            self.updatePlotSingleWaypoint(selectedWP)
+            self.updatePathPlotSingleWaypoint(selectedWP)
+        else:
+            self.updatePlotAllWaypoints()
+            self.updatePathPlot()
     
     def shutdown_plugin(self):
         # TODO unregister all publishers here
@@ -252,6 +406,5 @@ class HeroxMissionEditor(Plugin):
 
     #def trigger_configuration(self):
         # Comment in to signal that the plugin has a way to configure
-        # This will enable a setting button (gear icon) in each dock widget title bar
-        # Usually used to open a modal configuration dialog
+        # This will enable a setting button (gear icon) in each dock widget title bar # Usually used to open a modal configuration dialog
 

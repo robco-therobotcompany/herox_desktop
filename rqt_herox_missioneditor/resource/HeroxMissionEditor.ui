@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>763</width>
-    <height>1049</height>
+    <width>1853</width>
+    <height>1039</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,10 +25,10 @@ QPushButton[error=true]
 }</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+   <item row="0" column="1">
     <widget class="QGroupBox" name="gbxMission">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -36,7 +36,7 @@ QPushButton[error=true]
      <property name="title">
       <string>Mission</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
+     <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <widget class="QComboBox" name="cbxMission">
         <property name="editable">
@@ -130,11 +130,55 @@ QPushButton[error=true]
         </item>
        </layout>
       </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
      </layout>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item row="1" column="1">
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Positioning Accuracy Graph</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_7">
+      <item>
+       <widget class="PlotWidget" name="pltAccuracy">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="2">
     <widget class="QGroupBox" name="groupBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="title">
       <string>Waypoints</string>
      </property>
@@ -159,7 +203,7 @@ QPushButton[error=true]
            <bool>false</bool>
           </property>
           <property name="text">
-           <string>Add Current Pose</string>
+           <string>+</string>
           </property>
           <property name="checkable">
            <bool>false</bool>
@@ -178,21 +222,28 @@ QPushButton[error=true]
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Remove</string>
+           <string>-</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btnClearSelection">
+          <property name="text">
+           <string>Clear Sel.</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QPushButton" name="btnMoveUp">
           <property name="text">
-           <string>Move Up</string>
+           <string>▲</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QPushButton" name="btnMoveDown">
           <property name="text">
-           <string>Move Down</string>
+           <string>▼</string>
           </property>
          </widget>
         </item>
@@ -214,17 +265,44 @@ QPushButton[error=true]
         </attribute>
        </widget>
       </item>
+      <item>
+       <layout class="QFormLayout" name="formLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Display Visit</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QSpinBox" name="sbxVisit"/>
+        </item>
+       </layout>
+      </item>
      </layout>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QGroupBox" name="groupBox_2">
-     <property name="title">
-      <string>Positioning Accuracy</string>
+   <item row="1" column="2">
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
+     <property name="title">
+      <string>Path Display</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_6" stretch="0">
       <item>
-       <widget class="PlotWidget" name="pltAccuracy"/>
+       <widget class="PlotWidget" name="pltPath">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
