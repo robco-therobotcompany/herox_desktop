@@ -131,6 +131,37 @@ QPushButton[error=true]
        </layout>
       </item>
       <item>
+       <widget class="QPushButton" name="btnContinue">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Proceed</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblStatus">
+        <property name="font">
+         <font>
+          <family>TeX Gyre Cursor</family>
+          <pointsize>20</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>STATUS</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="verticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
@@ -199,6 +230,9 @@ QPushButton[error=true]
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="toolTip">
+           <string>Add WP at current pose</string>
+          </property>
           <property name="autoFillBackground">
            <bool>false</bool>
           </property>
@@ -221,13 +255,29 @@ QPushButton[error=true]
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="toolTip">
+           <string>Remove selected WP</string>
+          </property>
           <property name="text">
            <string>-</string>
           </property>
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="btnDirect">
+          <property name="toolTip">
+           <string>Direct to WP</string>
+          </property>
+          <property name="text">
+           <string>☞</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="btnClearSelection">
+          <property name="toolTip">
+           <string>Clear Selection</string>
+          </property>
           <property name="text">
            <string>Clear Sel.</string>
           </property>
@@ -235,6 +285,9 @@ QPushButton[error=true]
         </item>
         <item>
          <widget class="QPushButton" name="btnMoveUp">
+          <property name="toolTip">
+           <string>Move selected WP up</string>
+          </property>
           <property name="text">
            <string>▲</string>
           </property>
@@ -242,6 +295,9 @@ QPushButton[error=true]
         </item>
         <item>
          <widget class="QPushButton" name="btnMoveDown">
+          <property name="toolTip">
+           <string>Move selected WP down</string>
+          </property>
           <property name="text">
            <string>▼</string>
           </property>

@@ -11,10 +11,12 @@ from python_qt_binding.QtWidgets import QWidget, QTableWidgetItem, QPushButton
 import pyqtgraph as pg
 from std_srvs.srv import Trigger
 from actionlib_msgs.msg import GoalID
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, PoseStamped
+from std_msgs.msg import Header
 from nav_msgs.msg import OccupancyGrid
 from herox_coordinator.msg import Mission as MissionMessage, Missions as MissionsMessage
-from herox_coordinator.srv import SubsystemControl, SubsystemControlResponse, LoadMission, NewMission, SaveMission, WaypointAction
+from herox_coordinator.srv import SubsystemControl, SubsystemControlResponse, LoadMission, NewMission, SaveMission, WaypointAction, StartMission
+import std_msgs
 
 
 # Values for colored terminal output
@@ -68,7 +70,7 @@ class HeroxMissionEditor(Plugin):
         self._loadService = rospy.ServiceProxy('/load_mission', LoadMission)
         self._newService = rospy.ServiceProxy('/new_mission', NewMission)
         self._saveService = rospy.ServiceProxy('/save_mission', SaveMission)
-        self._startService = rospy.ServiceProxy('/start_mission', Trigger)
+        self._startService = rospy.ServiceProxy('/start_mission', StartMission)
         self._stopService = rospy.ServiceProxy('/stop_mission', Trigger)
         self._addWPService = rospy.ServiceProxy('/add_waypoint', Trigger)
         self._wpUpService = rospy.ServiceProxy('/waypoint_up', WaypointAction)
@@ -76,6 +78,7 @@ class HeroxMissionEditor(Plugin):
         self._wpSetTagService = rospy.ServiceProxy('/waypoint_set_tag', WaypointAction)
         self._wpSetIDService = rospy.ServiceProxy('/waypoint_set_id', WaypointAction)
         self._wpRemoveService = rospy.ServiceProxy('/waypoint_remove', WaypointAction)
+        self._continueService = rospy.ServiceProxy('/continue_mission', Trigger)
 
         # Set up button callbacks
         self._widget.btnLoadMission.clicked.connect(self.btnLoad_callback)
@@ -87,6 +90,11 @@ class HeroxMissionEditor(Plugin):
         self._widget.btnMoveUp.clicked.connect(self.btnMoveUp_callback)
         self._widget.btnMoveDown.clicked.connect(self.btnMoveDown_callback)
         self._widget.btnClearSelection.clicked.connect(self.btnClearSelection_callback)
+        self._widget.btnDirect.clicked.connect(self.btnDirect_callback)
+        self._widget.btnContinue.clicked.connect(self.btnContinue_callback)
+
+        # move_base goal publisher
+        self._goalPub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
 
         self._widget.sbxVisit.valueChanged.connect(self.sbxVisit_callback)
 
@@ -134,7 +142,10 @@ class HeroxMissionEditor(Plugin):
         self._missionsSub = rospy.Subscriber('missions', MissionsMessage, self.missionsCallback)
         rospy.Subscriber('current_mission', MissionMessage, self.currentMissionCallback)
         rospy.Subscriber('map', OccupancyGrid, self.mapCallback)
+        rospy.Subscriber('mission_status', std_msgs.msg.String, self.statusCallback)
 
+    def statusCallback(self, msg):
+        self._widget.lblStatus.setText(msg.data)
     def missionsCallback(self, msg):
         self.missions = msg.missions
         self.missionsUpdated.emit(msg.missions)
@@ -309,8 +320,25 @@ class HeroxMissionEditor(Plugin):
 
         return selection[0].topRow()
 
+    def stamp_pose(self, pose, frame_id='map'):
+      poseStamped = PoseStamped()
+      poseStamped.pose = pose
+      poseStamped.header = Header()
+      poseStamped.header.stamp = rospy.Time.now()
+      poseStamped.header.frame_id = frame_id
+      return poseStamped
+
+    def btnDirect_callback(self):
+        row = self.getSelectedWaypoint()
+        if row is None:
+            return
+
+        # Send selected WP to move_base
+        wp = self.currentMission.waypoints[row]
+        self._goalPub.publish(self.stamp_pose(wp.pose))
+
     def btnMoveUp_callback(self):
-        row = getSelectedWaypoint()
+        row = self.getSelectedWaypoint()
         if row is None:
             return
 
@@ -324,7 +352,7 @@ class HeroxMissionEditor(Plugin):
         #self._widget.twWaypoints.selectRow(row-1)
 
     def btnMoveDown_callback(self):
-        row = getSelectedWaypoint()
+        row = self.getSelectedWaypoint()
         if row is None:
             return
 
@@ -336,6 +364,9 @@ class HeroxMissionEditor(Plugin):
         #    self.tblSwapItems(row,c,row+1,c)
 
         #self._widget.twWaypoints.selectRow(row+1)
+
+    def btnContinue_callback(self):
+        self._continueService()
 
     def cellChangedCallback(self, row, column):
         if column == 1:
@@ -352,8 +383,13 @@ class HeroxMissionEditor(Plugin):
         self._widget.twWaypoints.setItem(r2,c2,i1)
 
     def btnStart_callback(self):
-        print('Requesting to start mission')
-        self._startService()
+        wp = self.getSelectedWaypoint()
+        if wp is None:
+            print('Requesting to start mission')
+            self._startService(0)
+        else:
+            print('Requesting to start mission at waypoint ' + str(wp))
+            self._startService(wp)
 
     def btnStop_callback(self):
         print('Requesting to stop mission')
