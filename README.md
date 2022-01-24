@@ -6,4 +6,4 @@ Desktop packages for the HEROX AMR platform.
 
 # OSS LICENSES
 
-See [LICENSES.md](https://gitlab.com/kea-robotics/industry_projects/21_amr/herox/-/blob/master/LICENSES.md) for a summary of OSS licenses used by dependencies.
+See [HEROX/LICENSES.md](https://gitlab.com/kea-robotics/industry_projects/21_amr/herox/-/blob/master/LICENSES.md) for a summary of OSS licenses used by dependencies.
